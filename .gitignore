@@ -1,0 +1,38 @@
+# Credentials, authorization state and local settings
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.session
+*.session-*
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.token
+mcp-token
+# Files, private reports and local checkouts
+transfer/
+data/
+outputs/
+backups/
+work/
+*.log
+# Local caches and build products
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.DS_Store
+.idea/
+.vscode/

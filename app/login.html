@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Подключение MAX</title>
+<style>
+body{font:17px/1.6 system-ui,sans-serif;background:#f3f4fa;color:#182139;max-width:620px;margin:60px auto;padding:24px}
+main{background:white;border-radius:24px;padding:32px;box-shadow:0 12px 60px #18213912}
+h1{font-size:30px;line-height:1.2}button{background:#5b3dd9;color:white;border:0;border-radius:12px;padding:14px 22px;font:inherit;cursor:pointer}
+button:disabled{opacity:.5}img{width:290px;max-width:100%;display:block;margin:20px auto}input{font:inherit;padding:12px;max-width:90%}
+small{color:#586175}#state{padding:12px;background:#f3f4fa;border-radius:12px} [hidden]{display:none!important}
+</style>
+<main><h1>Подключить личный MAX</h1>
+<p>Нажмите «Получить QR-код», затем откройте MAX на телефоне и отсканируйте код через раздел устройств.</p>
+<p id="state" role="status">Проверяем подключение…</p>
+<button id="start">Получить QR-код</button>
+<img id="qr" alt="QR-код входа в MAX" hidden>
+<form id="passwordForm" hidden><p>MAX запросил пароль учётной записи:</p><input id="password" type="password" autocomplete="current-password" required maxlength="1024"><button>Войти</button></form>
+<p id="error" role="alert"></p>
+<small>Вход обрабатывается контейнером на этом компьютере. Сессия сохраняется в отдельном томе Docker. Пароль не сохраняется. Используется неофициальный клиент PyMax.</small>
+</main><script>
+const el=id=>document.getElementById(id);
+const labels={not_connected:'Учётная запись ещё не подключена.',connecting:'Подключаемся к MAX…',scan_qr:'Отсканируйте QR-код в MAX на телефоне.',password_required:'Введите пароль MAX.',ready:'MAX подключён. Можно вернуться в Codex.',disconnected:'Соединение закрыто. Нажмите кнопку для повторного подключения.',error:'Вход не завершён. Получите новый код и попробуйте ещё раз.'};
+let lastPhase='';
+async function post(path,body={}){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw Error('Не удалось выполнить запрос ('+r.status+').');return r.json()}
+async function refresh(){try{const r=await fetch('/status');if(!r.ok)throw Error('Нет соединения с контейнером');const s=await r.json();el('state').textContent=labels[s.phase]||s.phase;el('error').textContent=s.error?(['ConnectionResetError','ConnectionError','TimeoutError','OSError'].includes(s.error)?'Не удалось соединиться с MAX. Проверьте, открывается ли web.max.ru и доступен ли MAX через ваше сетевое подключение.':'Причина: '+s.error):'';el('qr').hidden=s.phase!=='scan_qr';if(s.phase==='scan_qr'&&lastPhase!=='scan_qr')el('qr').src='/qr.png?t='+Date.now();el('passwordForm').hidden=s.phase!=='password_required';el('start').disabled=['connecting','scan_qr','password_required','ready'].includes(s.phase);el('start').textContent=['error','disconnected'].includes(s.phase)?'Подключить снова':'Получить QR-код';lastPhase=s.phase}catch(e){el('error').textContent=e.message}}
+el('start').onclick=async()=>{try{el('start').disabled=true;await post('/auth/start');await refresh()}catch(e){el('error').textContent=e.message;el('start').disabled=false}};
+el('passwordForm').onsubmit=async e=>{e.preventDefault();const value=el('password').value;el('password').value='';try{await post('/auth/password',{password:value})}catch(e){el('error').textContent=e.message}};
+refresh();setInterval(refresh,2000);
+</script></html>

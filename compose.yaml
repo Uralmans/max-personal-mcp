@@ -1,0 +1,31 @@
+services:
+  max-mcp:
+    build: .
+    image: local/max-personal-mcp:0.2.0
+    container_name: max-mcp
+    environment:
+      MAX_PROXY: ${MAX_PROXY:-}
+    ports:
+      - "127.0.0.1:9030:8765"
+    volumes:
+      - max-session:/data
+      - type: bind
+        source: ${MAX_TRANSFER_DIR:-./transfer}/pending
+        target: /transfer
+        read_only: true
+        bind:
+          create_host_path: false
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  max-session:

@@ -1,0 +1,7 @@
+# Docker context allowlist: never copy local sessions, transfer files or .env.
+**
+!Dockerfile
+!requirements.txt
+!requirements.lock.txt
+!app/
+!app/**

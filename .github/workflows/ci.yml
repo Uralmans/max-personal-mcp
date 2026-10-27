@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check public files
+        run: python3 scripts/check_public_files.py
+      - name: Build isolated test image
+        run: docker build -t max-personal-mcp-test .
+      - name: Run tests without a MAX account
+        run: >-
+          docker run --rm --read-only --tmpfs /tmp
+          -v "$PWD/tests:/tests:ro"
+          max-personal-mcp-test
+          python -m unittest discover -s /tests -v
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan Git history with Gitleaks
+        run: >-
+          docker run --rm -v "$PWD:/repo:ro"
+          ghcr.io/gitleaks/gitleaks:v8.30.1
+          git /repo --redact --no-banner
